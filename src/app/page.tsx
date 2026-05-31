@@ -159,6 +159,7 @@ export default function Home() {
             value={speech.voiceURI}
             onChange={speech.setVoice}
             onPreview={(text) => speech.speak(text)}
+            onOpen={speech.refreshVoices}
           />
         )}
       </div>

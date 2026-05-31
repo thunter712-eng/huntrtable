@@ -11,8 +11,13 @@
  *
  * Paths are resolved relative to the worker's own location so this works both
  * at the site root and under a sub-path like GitHub Pages' /huntrtable/.
+ *
+ * BUILD_ID is replaced at build time (scripts/stamp-sw.mjs) with a unique
+ * value so every deploy ships a byte-different worker. The browser then sees a
+ * new version, installs it, and our page reloads to pick up the latest assets.
  */
-const CACHE = "huntrtable-v2";
+const BUILD_ID = "__BUILD_ID__";
+const CACHE = `huntrtable-${BUILD_ID}`;
 // e.g. "/" locally, "/huntrtable/" on GitHub Pages.
 const BASE = new URL("./", self.location).pathname;
 const SHELL = [BASE, `${BASE}manifest.json`, `${BASE}icons/icon-192.png`];

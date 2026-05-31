@@ -5,8 +5,8 @@
   "description": "HuntrTable — great conversations start here. A mobile-first family conversation game.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "build:pages": "NEXT_PUBLIC_BASE_PATH=/huntrtable next build",
+    "build": "next build && node scripts/stamp-sw.mjs",
+    "build:pages": "NEXT_PUBLIC_BASE_PATH=/huntrtable npm run build",
     "preview": "npx --yes serve@latest out",
     "lint": "next lint",
     "icons": "node scripts/generate-icons.mjs"

@@ -7,6 +7,8 @@ interface VoiceSelectProps {
   onChange: (uri: string) => void;
   /** Speak a short sample so the user can hear the chosen voice. */
   onPreview: (text: string) => void;
+  /** Re-query the device for voices (called when the picker is opened). */
+  onOpen: () => void;
 }
 
 const SAMPLE = "Hi! Great conversations start here. What is your favorite memory?";
@@ -32,6 +34,7 @@ export default function VoiceSelect({
   value,
   onChange,
   onPreview,
+  onOpen,
 }: VoiceSelectProps) {
   if (voices.length === 0) return null;
 
@@ -50,6 +53,8 @@ export default function VoiceSelect({
         <select
           value={value}
           onChange={handleChange}
+          onFocus={onOpen}
+          onPointerDown={onOpen}
           aria-label="Choose a voice"
           className="ht-select__field"
         >
@@ -66,7 +71,7 @@ export default function VoiceSelect({
       </label>
       <p className="px-2 text-center text-[0.7rem] leading-snug text-stone-400 dark:text-stone-500">
         Voices with ✨ sound most natural. On iPhone, add more via Settings →
-        Accessibility → Spoken Content → Voices.
+        Accessibility → Read &amp; Speak → Voices, then reopen this picker.
       </p>
     </div>
   );

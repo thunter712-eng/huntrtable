@@ -60,6 +60,8 @@ export interface UseSpeech {
   voiceURI: string;
   /** Choose a specific voice (persisted). Pass "" to return to automatic. */
   setVoice: (uri: string) => void;
+  /** Re-query the OS for installed voices (picks up newly downloaded ones). */
+  refreshVoices: () => void;
   /** Toggle speech on/off (persisted). Cancels current speech when turned off. */
   toggle: () => void;
   /** Speak the given text aloud (no-op when disabled or unsupported). */
@@ -77,6 +79,20 @@ export function useSpeech(): UseSpeech {
   // Mirror voices/selection into refs so speak() always sees current values.
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const voiceURIRef = useRef("");
+
+  /** Re-query the OS voice list and update state if it changed. */
+  const refreshVoices = useCallback(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const ranked = rankEnglishVoices(window.speechSynthesis.getVoices());
+    if (ranked.length === 0) return;
+    // Only update state when the set of voices actually changed (avoids churn).
+    const sig = (list: SpeechSynthesisVoice[]) =>
+      list.map((v) => v.voiceURI).join("|");
+    if (sig(ranked) !== sig(voicesRef.current)) {
+      voicesRef.current = ranked;
+      setVoices(ranked);
+    }
+  }, []);
 
   useEffect(() => {
     const isSupported =
@@ -96,18 +112,24 @@ export function useSpeech(): UseSpeech {
       /* ignore */
     }
 
-    const loadVoices = () => {
-      const ranked = rankEnglishVoices(window.speechSynthesis.getVoices());
-      voicesRef.current = ranked;
-      setVoices(ranked);
-    };
-    loadVoices();
-    // Voices often load asynchronously, especially on first visit.
-    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+    refreshVoices();
+    // Voices load asynchronously; iOS in particular may populate late or after
+    // returning from Settings, so we listen for the event AND retry on focus.
+    window.speechSynthesis.addEventListener("voiceschanged", refreshVoices);
+    document.addEventListener("visibilitychange", refreshVoices);
+    window.addEventListener("focus", refreshVoices);
+    // A couple of delayed retries catch slow first-load population on iOS.
+    const t1 = setTimeout(refreshVoices, 500);
+    const t2 = setTimeout(refreshVoices, 1500);
+
     return () => {
-      window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+      window.speechSynthesis.removeEventListener("voiceschanged", refreshVoices);
+      document.removeEventListener("visibilitychange", refreshVoices);
+      window.removeEventListener("focus", refreshVoices);
+      clearTimeout(t1);
+      clearTimeout(t2);
     };
-  }, []);
+  }, [refreshVoices]);
 
   /** Resolve the voice to use: the user's choice, else the top-ranked one. */
   const resolveVoice = useCallback((): SpeechSynthesisVoice | null => {
@@ -170,5 +192,15 @@ export function useSpeech(): UseSpeech {
     });
   }, [cancel]);
 
-  return { enabled, supported, voices, voiceURI, setVoice, toggle, speak, cancel };
+  return {
+    enabled,
+    supported,
+    voices,
+    voiceURI,
+    setVoice,
+    refreshVoices,
+    toggle,
+    speak,
+    cancel,
+  };
 }
