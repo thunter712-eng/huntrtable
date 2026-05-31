@@ -27,7 +27,7 @@ Built with **Next.js · React · TypeScript · Tailwind CSS**. No backend requir
 
 ```bash
 npm install
-npm run icons   # generate PNG PWA icons from public/icons/icon.svg
+npm run icons   # generate PNG PWA icons from public/icons/source-icon.png
 npm run dev     # http://localhost:3000
 ```
 

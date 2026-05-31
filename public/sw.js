@@ -12,10 +12,10 @@
  * Paths are resolved relative to the worker's own location so this works both
  * at the site root and under a sub-path like GitHub Pages' /huntrtable/.
  */
-const CACHE = "huntrtable-v1";
+const CACHE = "huntrtable-v2";
 // e.g. "/" locally, "/huntrtable/" on GitHub Pages.
 const BASE = new URL("./", self.location).pathname;
-const SHELL = [BASE, `${BASE}manifest.json`, `${BASE}icons/icon.svg`];
+const SHELL = [BASE, `${BASE}manifest.json`, `${BASE}icons/icon-192.png`];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
