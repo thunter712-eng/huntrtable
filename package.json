@@ -1,0 +1,32 @@
+{
+  "name": "huntrtable",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HuntrTable — great conversations start here. A mobile-first family conversation game.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:pages": "NEXT_PUBLIC_BASE_PATH=/huntrtable next build",
+    "preview": "npx --yes serve@latest out",
+    "lint": "next lint",
+    "icons": "node scripts/generate-icons.mjs"
+  },
+  "dependencies": {
+    "canvas-confetti": "^1.9.3",
+    "framer-motion": "^11.18.2",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^22.10.10",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "sharp": "^0.33.5",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3"
+  }
+}
