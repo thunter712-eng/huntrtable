@@ -23,9 +23,17 @@ const BASE = new URL("./", self.location).pathname;
 const SHELL = [BASE, `${BASE}manifest.json`, `${BASE}icons/icon-192.png`];
 
 self.addEventListener("install", (event) => {
+  // Note: we deliberately do NOT skipWaiting() here. A new worker stays in the
+  // "waiting" state so the page can show a "new version available" prompt; it
+  // only takes over when the user taps Refresh (see the message handler below).
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()),
+    caches.open(CACHE).then((cache) => cache.addAll(SHELL)),
   );
+});
+
+// The page posts this when the user accepts an update.
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {

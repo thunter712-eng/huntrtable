@@ -1,25 +1,25 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BASE_PATH } from "@/lib/basePath";
 
 /**
- * Registers the service worker and keeps the installed app up to date.
+ * Registers the service worker, watches for updates, and shows a "new version
+ * available" toast the user can tap to refresh — no delete/reinstall needed.
  *
- * Update flow (so a home-screen app refreshes itself without reinstalling):
- *  - Each deploy ships a uniquely-stamped sw.js, so the browser detects a new
- *    version and installs it. The new worker calls skipWaiting() (in sw.js),
- *    activates, and claims the page — which fires "controllerchange".
- *  - We reload once on controllerchange, but only if the page was already
- *    controlled (i.e. this is an update, not the first install) so first visits
- *    don't flash a reload.
- *  - We also poll for updates on launch, when the app returns to the
- *    foreground, and on an interval — important on iOS, which otherwise rarely
- *    re-checks for a standalone web app.
- *
- * Renders nothing.
+ * How it works:
+ *  - Each deploy ships a uniquely-stamped sw.js, so the browser installs the
+ *    new worker. Because sw.js does NOT skipWaiting, the new worker parks in
+ *    the "waiting" state — that's our signal that an update is ready.
+ *  - We surface that as a toast. Tapping Refresh posts SKIP_WAITING to the
+ *    waiting worker; once it takes control ("controllerchange") we reload.
+ *  - We poll for updates on launch, when the app returns to the foreground,
+ *    and on an interval — important on iOS, which rarely re-checks otherwise.
  */
 export default function PwaRegister() {
+  const [updateReady, setUpdateReady] = useState(false);
+  const waitingRef = useRef<ServiceWorker | null>(null);
+
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
@@ -27,10 +27,9 @@ export default function PwaRegister() {
     }
 
     let refreshing = false;
-    // If a controller already exists, this page load is from an installed app,
-    // so a later controller change means a real update we should reload for.
+    // Pages controlled at load time are running an installed app; a later
+    // controller change is then a real update we should reload for.
     const wasControlled = !!navigator.serviceWorker.controller;
-
     const onControllerChange = () => {
       if (!wasControlled || refreshing) return;
       refreshing = true;
@@ -44,10 +43,10 @@ export default function PwaRegister() {
     let registration: ServiceWorkerRegistration | undefined;
     let interval: ReturnType<typeof setInterval> | undefined;
 
-    const checkForUpdate = () => registration?.update().catch(() => {});
-
-    const onVisible = () => {
-      if (document.visibilityState === "visible") checkForUpdate();
+    const announce = (worker: ServiceWorker | null) => {
+      if (!worker) return;
+      waitingRef.current = worker;
+      setUpdateReady(true);
     };
 
     const register = async () => {
@@ -56,12 +55,39 @@ export default function PwaRegister() {
           `${BASE_PATH}/sw.js`,
           { scope: `${BASE_PATH}/` },
         );
-        checkForUpdate();
-        // Re-check when the user comes back to the app, and periodically.
+
+        // An update may already be waiting from a previous visit.
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          announce(registration.waiting);
+        }
+
+        registration.addEventListener("updatefound", () => {
+          const incoming = registration!.installing;
+          if (!incoming) return;
+          incoming.addEventListener("statechange", () => {
+            if (
+              incoming.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
+              announce(incoming);
+            }
+          });
+        });
+
+        registration.update().catch(() => {});
         document.addEventListener("visibilitychange", onVisible);
-        interval = setInterval(checkForUpdate, 30 * 60 * 1000);
+        interval = setInterval(
+          () => registration?.update().catch(() => {}),
+          30 * 60 * 1000,
+        );
       } catch (err) {
         console.warn("SW registration failed:", err);
+      }
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        registration?.update().catch(() => {});
       }
     };
 
@@ -78,5 +104,30 @@ export default function PwaRegister() {
     };
   }, []);
 
-  return null;
+  const refresh = useCallback(() => {
+    setUpdateReady(false);
+    const worker = waitingRef.current;
+    if (worker) {
+      worker.postMessage({ type: "SKIP_WAITING" });
+    } else {
+      window.location.reload();
+    }
+  }, []);
+
+  if (!updateReady) return null;
+
+  return (
+    <div className="ht-update-toast" role="status">
+      <span className="flex items-center gap-1.5">
+        <span aria-hidden>✨</span> New version available
+      </span>
+      <button
+        type="button"
+        onClick={refresh}
+        className="ht-update-toast__btn"
+      >
+        Refresh
+      </button>
+    </div>
+  );
 }
