@@ -203,6 +203,40 @@ body {
     color: #e7e5e4;
   }
 
+  /* ── Voice picker ── */
+  .ht-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 100%;
+    padding: 0.55rem 0.9rem;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    box-shadow: 0 6px 12px -8px rgba(0, 0, 0, 0.25);
+    color: #57534e;
+  }
+  .dark .ht-select {
+    color: #e7e5e4;
+  }
+  .ht-select__field {
+    max-width: 14rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-family: var(--font-body), sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-overflow: ellipsis;
+    outline: none;
+    /* Strip the native chevron; we render our own ▾. */
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .ht-select__field option {
+    color: #1c1917;
+  }
+
   /* ── Round icon button (theme toggle) ── */
   .ht-icon-btn {
     display: grid;

@@ -5,6 +5,7 @@ import CategoryButton from "@/components/CategoryButton";
 import SurpriseButton from "@/components/SurpriseButton";
 import QuestionCard from "@/components/QuestionCard";
 import Controls from "@/components/Controls";
+import VoiceSelect from "@/components/VoiceSelect";
 import ThemeToggle from "@/components/ThemeToggle";
 import { CATEGORIES } from "@/lib/categories";
 import { useQuestions } from "@/lib/useQuestions";
@@ -134,6 +135,14 @@ export default function Home() {
           onNext={handleNext}
           onToggleSpeech={handleToggleSpeech}
         />
+        {speech.supported && speech.enabled && (
+          <VoiceSelect
+            voices={speech.voices}
+            value={speech.voiceURI}
+            onChange={speech.setVoice}
+            onPreview={(text) => speech.speak(text)}
+          />
+        )}
       </div>
     </main>
   );

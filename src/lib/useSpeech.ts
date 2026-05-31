@@ -3,46 +3,64 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
- * Thin wrapper around the browser Speech Synthesis API.
+ * Wrapper around the browser Speech Synthesis API.
  *
- * Picks a friendly, natural-sounding English voice when available and speaks
- * slightly slower than default with a warm, conversational tone. The on/off
- * preference is remembered in localStorage.
+ * Voice quality is entirely determined by what's installed on the device, so
+ * we (a) rank the available voices and auto-pick the most natural one, and
+ * (b) let the user override that choice (persisted). Speech plays slightly
+ * slower than default with a warm, conversational tone.
  */
 
-const STORAGE_KEY = "huntrtable:speech-enabled:v1";
+const ENABLED_KEY = "huntrtable:speech-enabled:v1";
+const VOICE_KEY = "huntrtable:voice:v1";
 
-/** Voice names we prefer, in priority order — these tend to sound most natural. */
-const PREFERRED_VOICES = [
-  "Samantha", // iOS / macOS
-  "Google US English",
-  "Microsoft Aria",
-  "Microsoft Jenny",
-  "Karen",
-  "Moira",
-];
+/**
+ * Score a voice for "naturalness". Modern OSes label their high-quality voices
+ * with these keywords; the named voices are known-good defaults per platform.
+ * Higher is better.
+ */
+function scoreVoice(v: SpeechSynthesisVoice): number {
+  const id = `${v.name} ${v.voiceURI}`.toLowerCase();
+  let s = 0;
 
-function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  if (voices.length === 0) return null;
-  const english = voices.filter((v) => v.lang.toLowerCase().startsWith("en"));
-  const pool = english.length ? english : voices;
+  if (id.includes("siri")) s += 120;
+  if (id.includes("natural") || id.includes("neural")) s += 100;
+  if (id.includes("premium") || id.includes("enhanced")) s += 80;
 
-  for (const name of PREFERRED_VOICES) {
-    const match = pool.find((v) => v.name.includes(name));
-    if (match) return match;
-  }
-  // Otherwise prefer a local (non-network), default voice.
-  return (
-    pool.find((v) => v.localService && v.default) ??
-    pool.find((v) => v.default) ??
-    pool[0]
-  );
+  // Known pleasant voices across iOS/macOS, Windows, Android, Chrome.
+  const goodNames = [
+    "ava", "samantha", "allison", "serena", "nicky", "zoe", // Apple
+    "aria", "jenny", "guy", "michelle", "zira", // Microsoft
+    "google us english", "google uk english female", // Chrome/Android
+    "karen", "moira", "tessa", "fiona", "daniel", "kate",
+  ];
+  if (goodNames.some((n) => id.includes(n))) s += 35;
+
+  const lang = v.lang.toLowerCase();
+  if (lang === "en-us") s += 10;
+  else if (lang.startsWith("en")) s += 5;
+
+  if (v.default) s += 5;
+  return s;
+}
+
+/** English voices only, sorted best-first. */
+function rankEnglishVoices(all: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
+  const english = all.filter((v) => v.lang.toLowerCase().startsWith("en"));
+  const pool = english.length ? english : all;
+  return [...pool].sort((a, b) => scoreVoice(b) - scoreVoice(a));
 }
 
 export interface UseSpeech {
   enabled: boolean;
   supported: boolean;
-  /** Toggle speech on/off (persisted). Cancels any current speech when turned off. */
+  /** English voices available on this device, best-first. */
+  voices: SpeechSynthesisVoice[];
+  /** voiceURI of the chosen voice, or "" for automatic (best available). */
+  voiceURI: string;
+  /** Choose a specific voice (persisted). Pass "" to return to automatic. */
+  setVoice: (uri: string) => void;
+  /** Toggle speech on/off (persisted). Cancels current speech when turned off. */
   toggle: () => void;
   /** Speak the given text aloud (no-op when disabled or unsupported). */
   speak: (text: string) => void;
@@ -53,7 +71,12 @@ export interface UseSpeech {
 export function useSpeech(): UseSpeech {
   const [enabled, setEnabled] = useState(true);
   const [supported, setSupported] = useState(false);
-  const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [voiceURI, setVoiceURI] = useState("");
+
+  // Mirror voices/selection into refs so speak() always sees current values.
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const voiceURIRef = useRef("");
 
   useEffect(() => {
     const isSupported =
@@ -61,16 +84,22 @@ export function useSpeech(): UseSpeech {
     setSupported(isSupported);
     if (!isSupported) return;
 
-    // Restore saved preference.
     try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved !== null) setEnabled(saved === "true");
+      const savedEnabled = window.localStorage.getItem(ENABLED_KEY);
+      if (savedEnabled !== null) setEnabled(savedEnabled === "true");
+      const savedVoice = window.localStorage.getItem(VOICE_KEY);
+      if (savedVoice) {
+        setVoiceURI(savedVoice);
+        voiceURIRef.current = savedVoice;
+      }
     } catch {
       /* ignore */
     }
 
     const loadVoices = () => {
-      voiceRef.current = pickVoice(window.speechSynthesis.getVoices());
+      const ranked = rankEnglishVoices(window.speechSynthesis.getVoices());
+      voicesRef.current = ranked;
+      setVoices(ranked);
     };
     loadVoices();
     // Voices often load asynchronously, especially on first visit.
@@ -78,6 +107,17 @@ export function useSpeech(): UseSpeech {
     return () => {
       window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
     };
+  }, []);
+
+  /** Resolve the voice to use: the user's choice, else the top-ranked one. */
+  const resolveVoice = useCallback((): SpeechSynthesisVoice | null => {
+    const list = voicesRef.current;
+    if (list.length === 0) return null;
+    if (voiceURIRef.current) {
+      const chosen = list.find((v) => v.voiceURI === voiceURIRef.current);
+      if (chosen) return chosen;
+    }
+    return list[0]; // best-ranked
   }, []);
 
   const cancel = useCallback(() => {
@@ -93,21 +133,36 @@ export function useSpeech(): UseSpeech {
       synth.cancel(); // Interrupt anything already playing.
 
       const utter = new SpeechSynthesisUtterance(text);
-      if (voiceRef.current) utter.voice = voiceRef.current;
-      utter.rate = 0.92; // A touch slower than default for a relaxed feel.
-      utter.pitch = 1.05; // Slightly warm and friendly.
+      const voice = resolveVoice();
+      if (voice) {
+        utter.voice = voice;
+        utter.lang = voice.lang;
+      }
+      utter.rate = 0.95; // A touch slower than default for a relaxed feel.
+      utter.pitch = 1.0; // Neutral pitch reads most naturally.
       utter.volume = 1;
       synth.speak(utter);
     },
-    [supported, enabled],
+    [supported, enabled, resolveVoice],
   );
+
+  const setVoice = useCallback((uri: string) => {
+    voiceURIRef.current = uri;
+    setVoiceURI(uri);
+    try {
+      if (uri) window.localStorage.setItem(VOICE_KEY, uri);
+      else window.localStorage.removeItem(VOICE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const toggle = useCallback(() => {
     setEnabled((prev) => {
       const nextVal = !prev;
       if (!nextVal) cancel(); // Going silent — stop talking immediately.
       try {
-        window.localStorage.setItem(STORAGE_KEY, String(nextVal));
+        window.localStorage.setItem(ENABLED_KEY, String(nextVal));
       } catch {
         /* ignore */
       }
@@ -115,5 +170,5 @@ export function useSpeech(): UseSpeech {
     });
   }, [cancel]);
 
-  return { enabled, supported, toggle, speak, cancel };
+  return { enabled, supported, voices, voiceURI, setVoice, toggle, speak, cancel };
 }
