@@ -5,23 +5,29 @@ interface SurpriseButtonProps {
 }
 
 /**
- * The "Surprise Me" button — draws from a random category. Styled as a wide
- * rainbow pill so it reads as a special action distinct from the five circles.
+ * The "Surprise Me" button — draws from a random category. Sits in the center
+ * of the radial dial as a round, rainbow "hub" button, echoing the center of
+ * the physical device.
  */
 export default function SurpriseButton({ onPress }: SurpriseButtonProps) {
   return (
     <button
       type="button"
       onClick={onPress}
-      className="ht-surprise group inline-flex items-center gap-2 rounded-full px-7 py-3 font-display text-base font-semibold text-white outline-none transition-transform duration-150 active:scale-95"
+      aria-label="Surprise me — random category"
+      className="ht-surprise group grid h-[6.75rem] w-[6.75rem] place-items-center gap-0.5 rounded-full text-white outline-none transition-transform duration-150 active:scale-95"
     >
       <span
         aria-hidden
-        className="text-xl transition-transform duration-500 group-hover:rotate-180"
+        className="text-2xl drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)] transition-transform duration-500 group-hover:rotate-180"
       >
         🎲
       </span>
-      Surprise Me
+      <span className="font-display text-sm font-bold leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+        Surprise
+        <br />
+        Me
+      </span>
     </button>
   );
 }

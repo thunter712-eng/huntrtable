@@ -6,6 +6,8 @@ interface CategoryButtonProps {
   category: Category;
   /** Whether this category's question is currently on screen. */
   active?: boolean;
+  /** Show the small tagline under the name (hidden in the compact dial). */
+  showTagline?: boolean;
   onPress: (category: Category) => void;
 }
 
@@ -13,10 +15,15 @@ interface CategoryButtonProps {
  * A glossy, 3D "candy button" circle. The tactile feel comes from a layered
  * gradient (light gloss on top, darker base) plus a colored drop shadow that
  * compresses on press. Colors are driven by the category via CSS variables.
+ *
+ * The button's box is just the circle; the text label is absolutely positioned
+ * beneath it. That keeps the circle the element being centered, so it can be
+ * placed exactly on the radial dial without the label shifting it off-center.
  */
 export default function CategoryButton({
   category,
   active = false,
+  showTagline = true,
   onPress,
 }: CategoryButtonProps) {
   return (
@@ -24,7 +31,7 @@ export default function CategoryButton({
       type="button"
       onClick={() => onPress(category)}
       aria-label={`${category.name} — ${category.tagline}`}
-      className="ht-candy group flex flex-col items-center gap-2 outline-none"
+      className="ht-candy group relative outline-none"
       style={
         {
           "--c-base": category.color,
@@ -45,13 +52,15 @@ export default function CategoryButton({
           {category.emoji}
         </span>
       </span>
-      <span className="text-center leading-tight">
-        <span className="block font-display text-[0.95rem] font-semibold text-stone-700 dark:text-stone-100">
+      <span className="absolute left-1/2 top-full mt-1.5 w-20 -translate-x-1/2 text-center leading-tight">
+        <span className="block font-display text-[0.85rem] font-semibold text-stone-700 dark:text-stone-100">
           {category.name}
         </span>
-        <span className="block text-[0.7rem] font-medium text-stone-400 dark:text-stone-400">
-          {category.tagline}
-        </span>
+        {showTagline && (
+          <span className="block text-[0.7rem] font-medium text-stone-400 dark:text-stone-400">
+            {category.tagline}
+          </span>
+        )}
       </span>
     </button>
   );

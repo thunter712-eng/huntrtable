@@ -129,21 +129,29 @@ body {
     outline-offset: 4px;
   }
 
-  /* ── Surprise pill (rainbow) ── */
+  /* ── Surprise hub (round rainbow center of the dial) ── */
   .ht-surprise {
     background: linear-gradient(
-      95deg,
+      125deg,
       #3b82f6,
       #8b5cf6,
       #ef4444,
       #f97316,
       #22c55e
     );
-    background-size: 220% 100%;
+    background-size: 200% 200%;
+    box-shadow:
+      inset 0 3px 6px rgba(255, 255, 255, 0.5),
+      inset 0 -8px 12px rgba(0, 0, 0, 0.22),
+      0 10px 20px -4px rgba(139, 92, 246, 0.55),
+      0 3px 6px rgba(0, 0, 0, 0.18);
+    animation: ht-rainbow 7s linear infinite;
+  }
+  .ht-surprise:active {
     box-shadow:
       inset 0 2px 4px rgba(255, 255, 255, 0.4),
-      0 8px 16px -4px rgba(139, 92, 246, 0.5);
-    animation: ht-rainbow 6s linear infinite;
+      inset 0 -4px 8px rgba(0, 0, 0, 0.25),
+      0 4px 10px -4px rgba(139, 92, 246, 0.5);
   }
 
   /* ── Question card ── */
@@ -257,7 +265,7 @@ body {
 /* ── Keyframes ── */
 @keyframes ht-rainbow {
   to {
-    background-position: 220% 0;
+    background-position: 200% 200%;
   }
 }
 

@@ -92,25 +92,43 @@ export default function Home() {
         <ThemeToggle />
       </header>
 
-      {/* ── Category buttons ─────────────────────────────────── */}
+      {/* ── Category dial ────────────────────────────────────────
+          The five categories sit evenly around a circle (starting at the
+          top, 72° apart) with the Surprise Me hub in the center. */}
       <section
         aria-label="Conversation categories"
-        className="ht-grid mb-6 grid grid-cols-3 gap-x-3 gap-y-5"
+        className="relative mx-auto mb-4 aspect-square w-full max-w-[23rem]"
       >
-        {CATEGORIES.map((category, i) => (
-          <div
-            key={category.id}
-            /* Offset the middle of each row to create the playful, scattered look. */
-            className={i % 3 === 1 ? "translate-y-4" : ""}
-          >
-            <CategoryButton
-              category={category}
-              active={current?.category.id === category.id}
-              onPress={handleCategory}
-            />
-          </div>
-        ))}
-        <div className="col-span-3 mt-1 flex justify-center">
+        {/* Faint dial ring running through the button centers. */}
+        <div
+          aria-hidden
+          className="absolute left-1/2 top-1/2 h-[80%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-stone-300/50 dark:border-white/10"
+        />
+
+        {CATEGORIES.map((category, i) => {
+          // Place button i at angle: top (-90°) then 72° steps clockwise.
+          const angle = ((-90 + i * (360 / CATEGORIES.length)) * Math.PI) / 180;
+          const radius = 40; // % of half the container
+          const left = 50 + radius * Math.cos(angle);
+          const top = 50 + radius * Math.sin(angle);
+          return (
+            <div
+              key={category.id}
+              className="absolute -translate-x-1/2 -translate-y-1/2"
+              style={{ left: `${left}%`, top: `${top}%` }}
+            >
+              <CategoryButton
+                category={category}
+                active={current?.category.id === category.id}
+                showTagline={false}
+                onPress={handleCategory}
+              />
+            </div>
+          );
+        })}
+
+        {/* Center hub */}
+        <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
           <SurpriseButton onPress={handleSurprise} />
         </div>
       </section>
