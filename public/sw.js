@@ -1,5 +1,5 @@
 /**
- * HuntrTable service worker.
+ * YappoZappo service worker.
  *
  * Strategy:
  *  - Precache the app shell on install.
@@ -17,7 +17,7 @@
  * new version, installs it, and our page reloads to pick up the latest assets.
  */
 const BUILD_ID = "__BUILD_ID__";
-const CACHE = `huntrtable-${BUILD_ID}`;
+const CACHE = `yappozappo-${BUILD_ID}`;
 // e.g. "/" locally, "/huntrtable/" on GitHub Pages.
 const BASE = new URL("./", self.location).pathname;
 const SHELL = [BASE, `${BASE}manifest.json`, `${BASE}icons/icon-192.png`];

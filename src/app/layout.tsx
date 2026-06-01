@@ -21,15 +21,15 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "HuntrTable — Great conversations start here",
+  title: "YappoZappo — Great conversations start here",
   description:
     "A playful family conversation game for dinners, road trips, youth groups, and devotions. Tap a color, hear a question, and start talking.",
-  applicationName: "HuntrTable",
+  applicationName: "YappoZappo",
   manifest: `${BASE_PATH}/manifest.json`,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "HuntrTable",
+    title: "YappoZappo",
   },
   icons: {
     icon: [

@@ -83,7 +83,7 @@ export default function Home() {
       <header className="mb-5 flex items-start justify-between">
         <div>
           <h1 className="font-display text-4xl font-bold tracking-tight text-stone-800 dark:text-stone-50">
-            Huntr<span className="ht-accent">Table</span>
+            Yappo<span className="ht-accent">Zappo</span>
           </h1>
           <p className="mt-0.5 text-sm font-medium text-stone-500 dark:text-stone-400">
             Great conversations start here

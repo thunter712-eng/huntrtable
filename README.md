@@ -1,4 +1,4 @@
-# HuntrTable 💬
+# YappoZappo 💬
 
 **Great conversations start here.**
 

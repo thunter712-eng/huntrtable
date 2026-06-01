@@ -1,5 +1,5 @@
 /**
- * Shared types for HuntrTable.
+ * Shared types for YappoZappo.
  */
 
 /** Stable identifier for each conversation category. */

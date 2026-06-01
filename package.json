@@ -1,8 +1,8 @@
 {
-  "name": "huntrtable",
+  "name": "yappozappo",
   "version": "1.0.0",
   "private": true,
-  "description": "HuntrTable — great conversations start here. A mobile-first family conversation game.",
+  "description": "YappoZappo — great conversations start here. A mobile-first family conversation game.",
   "scripts": {
     "dev": "next dev",
     "build": "next build && node scripts/stamp-sw.mjs",
